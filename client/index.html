@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="friends_app">
+<head>
+	<meta charset="UTF-8">
+	<title>Full Mean Demo</title>
+	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.2/angular.min.js"></script>
+	<script type="text/javascript">
+		var friends_app = angular.module('friends_app', []);
+
+		friends_app.factory('FriendFactory', function($http) {
+			var factory = {};
+			var friends = [];
+
+			factory.index = function(callback) {
+				$http.get('/friends').success(function(output) {
+					friends = output;
+					callback(friends);
+				})
+			}
+
+			factory.create = function(info, callback) {
+				$http.post('/friends', info).success(function(output) {
+					friends = output; 
+					callback(friends);
+				})
+			}
+
+			factory.remove = function(info, callback) {
+
+				console.log("remove in factory is called");
+				$http.post('/friends/remove', info).success(function(output) {
+					friends.push(output);
+					callback(friends);
+				})
+			}
+
+			return factory;
+		});
+
+		friends_app.controller('FriendsController', function($scope, FriendFactory) {
+			$scope.friends = FriendFactory.index(function(data){
+				$scope.friends = data;
+			});
+
+		   	$scope.addFriend = function() {
+		   		console.log("Add friend is called");
+          		FriendFactory.create($scope.new_friend, function(data) {
+    				$scope.friends.push(data);
+          			$scope.new_friend = {};
+          		})
+          	}
+
+          	$scope.removeFriend = function() {
+          		console.log("Remove friend is called");
+
+          		FriendFactory.remove($scope.remove_friend, function(data) {
+      				$scope.friends.push(data);
+	     			$scope.remove_friend = {};
+          		})
+          	}
+		});
+	</script>
+</head>
+<body ng-controller = "FriendsController">
+	<h1>Friends</h1>
+	<input type="text" ng-model="filter_name" placeholder="filter"/>{{ filter_name }}
+	<ul>
+		<li ng-repeat="friend in friends" | filter: "filter_name">
+			{{ friend.name}}, {{ friend.age}}
+		</li>
+	</ul>
+
+	<h1>Add a friend</h1>
+	<form>
+		<input type="text" ng-model="new_friend.name" placeholder="name">
+		<input type="text" ng-model="new_friend.age" placeholder="age">
+		<input type="submit" ng-click="addFriend()">
+    </form>
+	<h1>Remove a friend</h1>
+	<form>
+		<input type="text" ng-model="remove_friend.name" placeholder="name">
+		<input type="submit" ng-click="removeFriend()">
+	</form>
+</body>
+</html>
